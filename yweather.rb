@@ -13,12 +13,15 @@ class YWeatherPlugin < Plugin
   URL = "http://weather.yahooapis.com/forecastrss"
 
   def help(plugin, topic="")
-    case (topic.intern rescue nil)
-    when :set
-      "Use \"!w set <zipcode|woeid>\" to save your zipcode or Yahoo! woeid."
-      else
-      "!w <zip|woeid> for local weather -- !fc <zip|woeid> for two-day forecast. (see also !help #{plugin} set)"
-      end
+    p = @bot.config['core.address_prefix'].first
+    case topic.downcase
+    when 'set'
+      "Use \"#{p}w set <zipcode|woeid>\" to set " +
+      "your default zipcode or Yahoo! woeid."
+    else
+      "#{p}w <zip|woeid> for local weather -- #{p}fc <zip|woeid> " +
+      "for two-day forecast. (see also #{p}help #{plugin} set)"
+    end
   end
 
   def weather(m, params)
@@ -32,9 +35,9 @@ class YWeatherPlugin < Plugin
       end
     end 
     feed = if location.length == 5
-             @bot.httputil.get(URL + "?p=#{location}")
+             @bot.httputil.get URL + "?p=#{location}"
            else
-             @bot.httputil.get(URL + "?w=#{location}&u=c")
+             @bot.httputil.get URL + "?w=#{location}&u=c"
            end
     if feed.nil?
       m.reply "Yahoo! Weather unavailable."
