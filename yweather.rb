@@ -6,7 +6,7 @@
 # Author:: Lite
 # Copyright:: (C) 2012 Lite
 # License:: GPL
-#
+# Version:: 2013-01-19
 
 class YWeatherPlugin < Plugin
 
@@ -20,37 +20,39 @@ class YWeatherPlugin < Plugin
   end
 
   def weather(m, params)
-  location = params[:id]
-  if location.nil? or location.empty?
-    if @registry.has_key? m.sourcenick.downcase
-      location = @registry[ m.sourcenick.downcase ]
+    location = params[:id]
+    if location.nil? or location.empty?
+      if @registry.has_key? m.sourcenick.downcase
+        location = @registry[ m.sourcenick.downcase ]
       else
-      m.reply "Invalid zip/id."
-      return
+        m.reply "Invalid zip/id."
+        return
       end
     end 
-  if location.length == 5
-    feed = Net::HTTP.get 'weather.yahooapis.com', "/forecastrss?p=#{location}"
+    if location.length == 5
+      feed = Net::HTTP.get 'weather.yahooapis.com', "/forecastrss?p=#{location}"
     else
-    feed = Net::HTTP.get 'weather.yahooapis.com', "/forecastrss?w=#{location}&u=c"
+      feed = Net::HTTP.get 'weather.yahooapis.com', "/forecastrss?w=#{location}&u=c"
     end
-  if feed.nil? or feed.empty?
-    m.reply "Yahoo! Weather unavailable."
-    return
+    if feed.nil? or feed.empty?
+      m.reply "Yahoo! Weather unavailable."
+      return
     end
-  xml = REXML::Document.new feed
-  degrees = xml.elements['//yweather:units'].attributes['temperature']
-  condition = xml.elements['//yweather:condition'].attributes['text']
-  city = xml.elements['//yweather:location'].attributes['city']
-  humidity = xml.elements['//yweather:atmosphere'].attributes['humidity']
-  region = xml.elements['//yweather:location'].attributes['region']
-  temp = xml.elements['//yweather:condition'].attributes['temp']
-  if params[:forecast]
-    xml.elements.each("//yweather:forecast") {
-      |e| m.reply "#{Bold}" + e.attributes["day"] + ":#{Bold} " + e.attributes["low"] + "/" + e.attributes["high"] + degrees + ", " + e.attributes["text"]
-      }
+    xml = REXML::Document.new feed
+    degrees = xml.elements['//yweather:units'].attributes['temperature']
+    condition = xml.elements['//yweather:condition'].attributes['text']
+    city = xml.elements['//yweather:location'].attributes['city']
+    humidity = xml.elements['//yweather:atmosphere'].attributes['humidity']
+    region = xml.elements['//yweather:location'].attributes['region']
+    temp = xml.elements['//yweather:condition'].attributes['temp']
+    if params[:forecast]
+      xml.elements.each("//yweather:forecast") do |e|
+        m.reply "#{Bold}#{e.attributes['day']}:#{Bold} " +
+                e.attributes['low'] + '/' + e.attributes['high'] + degrees +
+                ', ' + e.attributes['text']
+      end
     else
-    m.reply "#{city}, #{region} - #{temp}#{degrees}/#{humidity}\% humidity, #{condition}"
+      m.reply "#{city}, #{region} - #{temp}#{degrees}/#{humidity}\% humidity, #{condition}"
     end
   end
 
@@ -62,12 +64,11 @@ class YWeatherPlugin < Plugin
 
 end
 
-plugin = YWeatherPlugin.new
-plugin.map "w [:id]", :action => "weather", :defaults => { :forecast => false }
-plugin.map "weather [:id]", :action => "weather", :defaults => { :forecast => false }
-plugin.map "wz [:id]", :action => "weather", :defaults => { :forecast => false }
-plugin.map "fc [:id]", :action => "weather", :defaults => { :forecast => true }
-plugin.map "forecast [:id]", :action => "weather", :defaults => { :forecast => true }
-plugin.map "w set [:id]", :action => "set_user"
-plugin.map "wz set [:id]", :action => "set_user"
-plugin.default_auth("*",true)
+p = YWeatherPlugin.new
+p.map "w [:id]", :action => "weather", :defaults => { :forecast => false }
+p.map "weather [:id]", :action => "weather", :defaults => { :forecast => false }
+p.map "wz [:id]", :action => "weather", :defaults => { :forecast => false }
+p.map "fc [:id]", :action => "weather", :defaults => { :forecast => true }
+p.map "forecast [:id]", :action => "weather", :defaults => { :forecast => true }
+p.map "w set [zip[code]] [:id]", :action => "set_user"
+p.map "wz set [zip[code]] [:id]", :action => "set_user"
