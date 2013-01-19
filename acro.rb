@@ -1,13 +1,15 @@
 # Author:: David Gadling <dave@toasterwaffles.com>
-# Author:: Lite <degradinglight@gmail.com>
+# Author:: Jay Thomas <degradinglight@gmail.com>
 # Copyright:: (C) 2008 David Gadling
-# Copyright:: (C) 2012 Lite
+# Copyright:: (C) 2012 Jay Thomas
 # License:: BSD
 # Version:: 2012-05-19
 #
 # Acrophobia - Submit backronyms and vote on the best! 
 # http://en.wikipedia.org/wiki/Acrophobia_%28game%29
 #
+# TODO: Wow this plugin is very hackish. Definitely need to redo some things.
+# FIXME: Fix stats and hall of fame.
 # FIXME: Currently only works in one channel at a time since people /msg the
 # bot with suggestions and votes. Any possible work-arounds?
 # 
@@ -33,7 +35,6 @@ class AcroPlugin < Plugin
     :default => 45, :validate => Proc.new{|v| v > 1},
     :desc => "Determines how much time users have to vote on acronyms.")
 
-
   def help(plugin, topic="")
     case topic
     when 'hof'
@@ -50,7 +51,6 @@ class AcroPlugin < Plugin
       "Acro, the rbot acrophobia game. !#{plugin} start <# of rounds> starts a game of acro; The default number of rounds is #{@bot.config['acro.rounds']}. -- other help topics: hof, play, stats, stop, vote"
     end
   end
-
 
   def initialize()
     super
@@ -69,7 +69,6 @@ class AcroPlugin < Plugin
     @roundsLeft = 0
   end
 
-
   # Reset everything for a new round of the game
   def reset()
     @acro = ""
@@ -85,7 +84,6 @@ class AcroPlugin < Plugin
     @time = 0
   end
 
-
   # Start a game by picking a new acronym and letting the rest take over
   def startGame(m, params)
     if @playing
@@ -99,7 +97,6 @@ class AcroPlugin < Plugin
     pickNewAcronym()
   end
 
-
   # Starting a new round of a possibly new game. Pick an acronym and tell people
   # about it.
   def pickNewAcronym()
@@ -111,9 +108,9 @@ class AcroPlugin < Plugin
       # 90% chance of picking a new letter if a bad letter was chosen
       if BAD_LETTERS.include?(nextLetter) and rand(101) > 10
         nextLetter = sprintf("%c", 65+rand(26)) 
-        end
-      @acro += nextLetter
       end
+      @acro += nextLetter
+    end
 
     # FIXME: Should we add time for longer acronyms? joe says "no".
     @time = @bot.config['acro.round_time'] / 2
@@ -136,9 +133,8 @@ class AcroPlugin < Plugin
     }
   end
 
-
-  # Stop accepting submissions, tell people what they can vote on, and start
-  # accepting votes
+  # Stop accepting submissions, tell people what 
+  # they can vote on, and start accepting votes.
   def transitionToVoting()
     @submitting = false
     @bot.say(@channel, "Pencils down, time is up!")
@@ -146,7 +142,7 @@ class AcroPlugin < Plugin
       @bot.say(@channel, "Not enough submissions, stopping.")
       stopGame(nil, nil)
       return
-      end
+    end
     @bot.say(@channel, "Vote for one of the following and send it to " +
                        "me via #{Hi}/msg #{@bot.nick} vote <Number>")
     @answers.each { |k,v| 
@@ -159,7 +155,6 @@ class AcroPlugin < Plugin
     @bot.say(@channel, "You have #{Hi}#{@bot.config['acro.vote_time']} seconds to vote")
     @currTimer = @bot.timer.add_once(@bot.config['acro.round_time']) { tallyVotes }
   end
-
 
   # Tally up all the votes, assign points, and crown a winner
   def tallyVotes()
@@ -183,16 +178,16 @@ class AcroPlugin < Plugin
       if n[:votes] > winningVotes
         winner = n[:submitter]
         winningVotes = n[:votes]
-        elsif n[:votes] == winningVotes
+      elsif n[:votes] == winningVotes
         winner = ""
-        end
+      end
       if n[:submitter] == @submitOrder[0]
         user[:totalPoints] = user.fetch(:totalPoints, 0) + SPEED_POINTS
         @bot.say(@channel, "#{Hi}#{n[:submitter]}#{Clear} gets "+
                            "#{Hi}#{SPEED_POINTS}#{Clear} speed points")
-        end
-        @registry[n[:submitter]] = user
       end
+        @registry[n[:submitter]] = user
+    end
 
     if winner != ""
       ourWinner = @registry[winner]
@@ -202,12 +197,11 @@ class AcroPlugin < Plugin
                          "#{Hi}#{@len}#{Clear} bonus points" +
                          " for winning the round")
       @registry[winner] = ourWinner
-      end
+    end
 
     @roundsLeft = @roundsLeft - 1
     pickNewAcronym
   end
-
 
   # Figure out who the winnar is!
   def hof(m, params)
@@ -215,7 +209,7 @@ class AcroPlugin < Plugin
     tmpKey = params[:key].to_s
     if tmpKey == "points"
       tmpKey = "totalPoints"
-      end
+    end
     targetKey = tmpKey.to_sym
     m.reply("Checking out the #{params[:key].to_s} HoF...")
     tmp = @registry.to_hash
@@ -227,13 +221,10 @@ class AcroPlugin < Plugin
     sorted.each do |player|
       winners << "#{player[0]} has #{player[1][targetKey]}"
       winnersLeft -= 1
-      if winnersLeft == 0
-        break
-        end
-      end
+      break if winnersLeft == 0
+    end
     m.reply(winners.join(" | "))
   end
-
 
   # Say we're done playing and kill any timers
   def stopGame(m, params)
@@ -245,7 +236,6 @@ class AcroPlugin < Plugin
     @bot.timer.remove(@currTimer)
   end
 
-
   # Make sure that we're playing a game AND accepting votes (errors otherwise).
   # Make sure the user hasn't already voted in this round
   # Record their vote
@@ -254,35 +244,34 @@ class AcroPlugin < Plugin
     if !@playing
         @bot.notice(fool, "We're not playing acrophobia right now. Maybe you should start a game?")
       return
-      end
+    end
     if !@voting
       @bot.notice(fool, "I'm not taking votes right now. Maybe you wanted to submit an answer?")
       return
-      end
+    end
 
     vote = params[:input].to_s
     if vote !~ /^\d+$/
       @bot.notice(fool, "You need to vote for a #{Hi}number")
       return
-      end
+    end
 
     if @voters.include?(m.sourcenick.to_s)
       @bot.notice(fool, "Too late. You already voted.")
       return
-      end
+    end
 
     vote = vote.to_i
     if vote > @ballot.length or vote < 1
       @bot.notice(fool, "#{Hi}##{vote}#{Clear} wasn't an option!")
       return
-      end
+    end
 
     @voters.push(m.sourcenick.to_s)
     @ballot[vote-1][:votes] += 1
     @bot.notice(fool, "Your vote for #{Hi}##{vote}#{Clear} " +
                       "(#{@ballot[vote-1][:candidate]}) has been recorded")
   end
-
 
   # Accept backronym submissions
   # Make sure they're the right length, and compress to the right acronym
@@ -291,11 +280,11 @@ class AcroPlugin < Plugin
     if !@playing
       @bot.notice(fool, "We're not playing acrophobia right now. Maybe you should start a game?")
       return
-      end
+    end
     if !@submitting
       @bot.notice(fool, "I'm not taking acronym submissions right now.Maybe you wanted to vote?")
       return
-      end
+    end
     sender = m.sourcenick.to_s
 
     # First get all the cases where they can't submit or we can't accept their
@@ -315,7 +304,7 @@ class AcroPlugin < Plugin
       @bot.notice(fool, "#{whine}, it's too #{err}. " +
       "Try something #{Hi}#{@len}#{Clear} words long.")
       return
-      end
+    end
 
     # For each piece of what they submitted, take the first character and make
     # it uppercase, appending it to the acronym version of what they submitted
@@ -328,34 +317,33 @@ class AcroPlugin < Plugin
         @bot.notice(fool, "#{whine}, it doesn't match the target acronym " +
                           "(#{Hi}#{@acro}#{Clear})")
       return
-      end
+    end
 
     if @answers.has_key?(submission)
       @bot.notice(fool, "#{whine}, somebody already submitted it!")
       return
-      end
+    end
 
     if submission.gsub(/\s/, '').upcase == @acro
       @bot.notice(fool, "#{whine}, you submitted the acronym itself!")
       return
-      end
+    end
 
     # If they've submitted before, they lose their speed bonus and their old
     # answer goes away
     if @submitOrder.include?(sender)
       @submitOrder.delete(sender)
       @answers.delete(@answers.index(sender))
-      end
+    end
 
     @submitOrder.push(sender)
     @answers[submission] = sender
     if @firstAnswerer == ""
       @firstAnswerer = sender
-      end
+    end
     @bot.notice(fool, "Your submission (#{Hi}#{submission}#{Clear}) has been accepted")
     @bot.say(@channel, "#{@answers.keys.length} submissions accepted")
   end
-
 
   # Generic processing of private messages
   # If we're not playing, suggest they start a game
@@ -365,49 +353,46 @@ class AcroPlugin < Plugin
     if ! @playing
       @bot.notice(fool, "We're not playing acrophobia right now. Maybe you should start a game?")
       return
-      end
+    end
 
     handleVote(m, params) if @voting
     handleSubmission(m, params) if @submitting
   end
-
 
   # Simple processing of public messages. If we're playing or voting, tell them
   # it's secret. If we're not doing either of those, don't respond.
   def processPublic(m, params)
     if @playing
       if @voting
-        m.reply("I'm only listening for votes via /msg right now!")
+        m.reply "I'm only listening for votes via /msg right now!"
        else
-        m.reply("I'm only listening for submissions via /msg right now!")
-        end
+        m.reply "I'm only listening for submissions via /msg right now!"
       end
+    end
   end
-
 
   # Show my stats to everybody. Yay e-penis!
   def showMyStats(m, params)
     user = if params[:user].nil or params[:user].empty?
       m.sourcenick
-      else
+    else
       params[:user]
-      end
+    end
     foo = @registry[user.downcase]
     if foo == nil
       m.reply "You don't appear to have played acrophobia before!"
-      else
+    else
       ourReply = "Submissions: #{Hi}#{foo[:submissions]}#{Clear}" +
                  " | Wins: #{Hi}#{foo[:wins]}#{Clear}" +
                  " | Points: #{Hi}#{foo[:totalPoints]}#{Clear}"
       if m.channel
         ourReply = "#{m.sourcenick.to_s}: #{ourReply}"
         m.reply ourReply
-        else
+      else
         @bot.reply(m.sourcenick, ourReply)
-        end
       end
+    end
   end
-
 
   # Stop the game if we get told to cleanup
   def cleanup()
@@ -416,8 +401,8 @@ class AcroPlugin < Plugin
 
 end
 
-# The wildcarded routes need to go last so that more specific commands (e.g.
-# hof) get matched first
+# The wildcarded routes need to go last so that more
+# specific commands, (e.g. hof,) get matched first.
 plugin = AcroPlugin.new
 plugin.map 'acro start [:roundCount]', :action => 'startGame',    :private => false
 plugin.map 'acro stop',              :action => 'stopGame',       :private => false
