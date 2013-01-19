@@ -10,6 +10,8 @@
 
 class YWeatherPlugin < Plugin
 
+  URL = "http://weather.yahooapis.com/forecastrss"
+
   def help(plugin, topic="")
     case (topic.intern rescue nil)
     when :set
@@ -29,12 +31,12 @@ class YWeatherPlugin < Plugin
         return
       end
     end 
-    if location.length == 5
-      feed = Net::HTTP.get 'weather.yahooapis.com', "/forecastrss?p=#{location}"
-    else
-      feed = Net::HTTP.get 'weather.yahooapis.com', "/forecastrss?w=#{location}&u=c"
-    end
-    if feed.nil? or feed.empty?
+    feed = if location.length == 5
+             @bot.httputil.get(URL + "?p=#{location}")
+           else
+             @bot.httputil.get(URL + "?w=#{location}&u=c")
+           end
+    if feed.nil?
       m.reply "Yahoo! Weather unavailable."
       return
     end
