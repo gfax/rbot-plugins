@@ -57,8 +57,6 @@ class AcroPlugin < Plugin
     end
   end
 
-  attr_accessor :rounds_left
-
   def initialize()
     super
     @acro = ''
@@ -91,27 +89,31 @@ class AcroPlugin < Plugin
     @voting = false
   end
 
+  def say(msg, opts={})
+    @bot.say @channel, msg, opts
+  end
+
   # Start a game by picking a new acronym and letting the rest take over
   def start(m, params)
     if @playing
-      m.reply("I'm currently playing in #{@channel}, come join us!")
+      m.reply "I'm currently playing in #{@channel}. Come join us!"
       return
     end
     @playing = true
     @channel = m.channel
-    rounds_left = if params[:roundCount].to_i > 0
+    @rounds_left = if params[:roundCount].to_i > 0
                     params[:roundCount].to_i 
                   else
                     @bot.config['acro.rounds']
                   end
-    @bot.say(@channel, "Starting #{Hi}#{rounds_left}#{Clear} rounds of acrophobia")
+    say "Starting #{Hi}#{@rounds_left}#{Clear} rounds of acrophobia..."
     pick_acronym()
   end
 
   # Starting a new round of a possibly new game. Pick an acronym and tell people
   # about it.
   def pick_acronym()
-    if rounds_left == 0 then stop(nil, nil) and return end
+    if @rounds_left == 0 then stop(nil, nil) and return end
     reset
     @len = MIN_ACRO_LENGTH + rand(MAX_ACRO_LENGTH - MIN_ACRO_LENGTH)
     1.upto(@len) do |n|
@@ -125,9 +127,9 @@ class AcroPlugin < Plugin
     @time = @bot.config['acro.round_time'] / 2
 
     @submitting = true
-    @bot.say(@channel, "The current acronym is: #{Hi}#{@acro}#{Clear}")
-    @bot.say(@channel, "You have #{Hi}#{@time*2}#{Clear} seconds to submit backronyms" +
-                       " via #{Hi}/msg #{@bot.nick} acro <my-version-of-the-acronym>#{Clear}")
+    say "The current acronym is: #{Hi}#{@acro}#{Clear} You have " +
+        "#{Hi}#{@time*2}#{Clear} seconds to submit backronyms via " +
+        "#{Hi}/msg #{@bot.nick} acro <my-version-of-the-acronym>#{Clear}"
     @curr_timer = @bot.timer.add_once(@time) {
         warning
     }
@@ -135,8 +137,8 @@ class AcroPlugin < Plugin
 
 
   # Give everybody a warning about how much time they have left
-  def warning()
-    @bot.say(@channel, "#{Hi}#{@time}#{Clear} seconds left!")
+  def warning
+    say "#{Hi}#{@time}#{Clear} seconds left!"
     @curr_timer = @bot.timer.add_once(@time) {
       do_voting
     }
@@ -146,29 +148,29 @@ class AcroPlugin < Plugin
   # they can vote on, and start accepting votes.
   def do_voting()
     @submitting = false
-    @bot.say(@channel, "Pencils down, time is up!")
+    say "Pencils down, time is up!"
     if @answers.keys.length < 2
-      @bot.say(@channel, "Not enough submissions, stopping.")
+      say "Not enough submissions, stopping."
       stop(nil, nil)
       return
     end
-    @bot.say(@channel, "Vote for one of the following and send it to " +
-                       "me via #{Hi}/msg #{@bot.nick} vote <Number>")
+    say "Vote for one of the following and send it to " +
+        "me via #{Hi}/msg #{@bot.nick} vote <Number>"
     @answers.each do |k,v| 
       @ballot.push({:candidate=>k, :votes=>0, :submitter=>v})
     end
     1.upto(@ballot.length) do |n|
-      @bot.say(@channel, "#{Hi}#{n}. #{@ballot[n-1][:candidate]}")
+      say "#{Hi}#{n}. #{@ballot[n-1][:candidate]}"
     end
     @voting = true
-    @bot.say(@channel, "You have #{Hi}#{@bot.config['acro.vote_time']} seconds to vote")
+    say "You have #{Hi}#{@bot.config['acro.vote_time']} seconds to vote"
     @curr_timer = @bot.timer.add_once(@bot.config['acro.round_time']) { tally_votes }
   end
 
   # Tally up all the votes, assign points, and crown a winner
   def tally_votes()
     @voting = false
-    @bot.say(@channel, "Thanks for voting, let's look at the results!")
+    say "Thanks for voting, let's look at the results!"
 
     # Score =
     # Number of votes + 
@@ -181,9 +183,9 @@ class AcroPlugin < Plugin
       user[:wins]        = user.fetch(:wins, 0)
       user[:submissions] = user.fetch(:submissions, 0) + 1
       user[:totalPoints] = user.fetch(:totalPoints, 0) + n[:votes]
-      @bot.say(@channel, "#{Hi}#{n[:submitter]}#{Clear}'s answer of " +
-                         "#{Hi}#{n[:candidate]}#{Clear} received " + 
-                         "#{Hi}#{n[:votes]}#{Clear} votes")
+      say "#{Hi}#{n[:submitter]}#{Clear}'s answer of " +
+          "#{Hi}#{n[:candidate]}#{Clear} received " + 
+          "#{Hi}#{n[:votes]}#{Clear} votes"
       if n[:votes] > winning_votes
         winner = n[:submitter]
         winning_votes = n[:votes]
@@ -192,8 +194,8 @@ class AcroPlugin < Plugin
       end
       if n[:submitter] == @submit_order[0]
         user[:totalPoints] = user.fetch(:totalPoints, 0) + SPEED_POINTS
-        @bot.say(@channel, "#{Hi}#{n[:submitter]}#{Clear} gets "+
-                           "#{Hi}#{SPEED_POINTS}#{Clear} speed points")
+        say "#{Hi}#{n[:submitter]}#{Clear} gets "+
+            "#{Hi}#{SPEED_POINTS}#{Clear} speed points"
       end
         @registry[n[:submitter]] = user
     end
@@ -202,13 +204,13 @@ class AcroPlugin < Plugin
       our_winner = @registry[winner]
       our_winner[:totalPoints] = our_winner.fetch(:totalPoints, 0) + @len
       our_winner[:wins] = our_winner.fetch(:wins, 0) + 1
-      @bot.say(@channel, "#{Hi}#{winner}#{Clear} receives " +
-                         "#{Hi}#{@len}#{Clear} bonus points" +
-                         " for winning the round")
+      say "#{Hi}#{winner}#{Clear} receives " +
+          "#{Hi}#{@len}#{Clear} bonus points" +
+          " for winning the round"
       @registry[winner] = our_winner
     end
 
-    rounds_left -= 1
+    @rounds_left -= 1
     pick_acronym
   end
 
@@ -220,7 +222,7 @@ class AcroPlugin < Plugin
       tmp_key = "totalPoints"
     end
     target_key = tmp_key.to_sym
-    m.reply("Checking out the #{params[:key].to_s} HoF...")
+    m.reply "Checking out the #{params[:key].to_s} HoF..."
     tmp = @registry.to_hash
     sorted = tmp.sort { |a,b| b[1][target_key] <=> a[1][target_key] }
 
@@ -238,7 +240,7 @@ class AcroPlugin < Plugin
   # Say we're done playing and kill any timers
   def stop(m, params)
     return if ! @playing
-    @bot.say(@channel, "Well that was fun.")
+    say "Well that was fun."
     reset
     @playing = false
     @channel = ""
@@ -350,8 +352,8 @@ class AcroPlugin < Plugin
     if @first_answerer == ""
       @first_answerer = sender
     end
-    @bot.notice(fool, "Your submission (#{Hi}#{submission}#{Clear}) has been accepted")
-    @bot.say(@channel, "#{@answers.keys.length} submissions accepted")
+    @bot.notice(fool, "Your submission (#{Hi}#{submission}#{Clear}) has been accepted.")
+    say "#{@answers.keys.length} submissions accepted."
   end
 
   # Generic processing of private messages
@@ -391,14 +393,14 @@ class AcroPlugin < Plugin
     if foo == nil
       m.reply "You don't appear to have played acrophobia before!"
     else
-      ourReply = "Submissions: #{Hi}#{foo[:submissions]}#{Clear}" +
+      our_reply = "Submissions: #{Hi}#{foo[:submissions]}#{Clear}" +
                  " | Wins: #{Hi}#{foo[:wins]}#{Clear}" +
                  " | Points: #{Hi}#{foo[:totalPoints]}#{Clear}"
       if m.channel
-        ourReply = "#{m.sourcenick.to_s}: #{ourReply}"
-        m.reply ourReply
+        our_reply = "#{m.sourcenick.to_s}: #{our_reply}"
+        m.reply our_reply
       else
-        @bot.reply(m.sourcenick, ourReply)
+        @bot.reply(m.sourcenick, our_reply)
       end
     end
   end
