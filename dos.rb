@@ -489,12 +489,6 @@ class DosGame
         return
       end
     end
-    # Convert ffffff to code-friendly shorthand, 'ff'.
-    #if shorts.grep(/[f]{2,}/)
-    #  shorts.each do |e|
-    #    e.gsub!(/[f]{3,}/, 'ff')
-    #  end
-    #end
     full = shorts[0]    # player input
     short = shorts[1] || shorts[2] || shorts[3] # normal | special | wild
     jolly = shorts[3]   # wild
@@ -1018,7 +1012,7 @@ class DosPlugin < Plugin
     when 'commands'
       [
       "'jo' to join in",
-      "'pl <card>' to play <card>: e.g. 'pl g7' to play Green 7, or 'pl rr' to play Red Reverse, or 'pl y2y2' to play both Yellow 2 cards",
+      "'p/pl <card>' to play <card>: e.g. 'p g7' to play Green 7, or 'p rr' to play Red Reverse, or 'p y2y2y3' to play multiple Yellow 2 cards",
       "'dr' to draw a card",
       "'pa' to pass your turn",
       "'co <color>' to pick a color after playing a Wild: e.g. 'co g' to select Green (or 'pl w+4 g' to select the color when playing the Wild)",
@@ -1029,7 +1023,7 @@ class DosPlugin < Plugin
       "'ti' to show play time",
       "'tu' to show whose turn it is"
     ].join("; ")
-    when 'challenge'
+    when /ch(alleng(e|ing))?/
       "A Wild +4 can only be played legally if you don't have normal (not special) cards of the current color. " +
       "The next player can challenge a W+4 by using the 'ch' command. " +
       "If the W+4 play was illegal, the player who played it must pick the W+4, pick 4 cards from the stock, and play a legal card. " +
@@ -1097,11 +1091,11 @@ class DosPlugin < Plugin
     return unless m.plugin # skip messages such as: <someuser> botname,
     g = @games[m.channel]
     replied = true
-    case m.plugin.intern
-    when :jo # join game
+    case m.plugin.intern.downcase
+    when /^j(o|oin)?\b/ # join game
       return if m.params
       g.add_player(m.source)
-    when :pe, :dr # pick card
+    when /^pe\b/, /^d(r|raw)?\b/ # pick card
       return if m.params
       if g.has_turn?(m.source)
         if g.player_has_picked_twice
@@ -1112,28 +1106,28 @@ class DosPlugin < Plugin
           g.pick_card(m.source)
         end
       end
-    when :pa # pass turn
+    when /^pa(ss)?\b/ # pass turn
       return if m.params or not g.start_time
       if g.has_turn?(m.source)
         g.pass(m.source)
       end
-    when :pl, :ok # play card
+    when /^p(l|lay)?\b/ # play card
       if g.has_turn?(m.source)
         g.play_card(m.source, m.params.downcase)
       else
         m.reply "It's not your turn."
       end
-    when :co # pick color
+    when /^co(lor)?\b/ # pick color
       if g.has_turn?(m.source)
         g.choose_color(m.source, m.params.downcase)
       end
-    when :ca # show current cards
+    when /^ca?(rds)?\b/ # show current cards
       return if m.params
       g.show_all_cards(m.source)
-    when :cd # show current discard
+    when /^cd\b/ # show current discard
       return if m.params or not g.start_time
       g.show_discard
-    when :ch
+    when /^ch(allenge)?\b/
       if g.has_turn?(m.source)
         if g.last_discard
           g.challenge
@@ -1141,13 +1135,13 @@ class DosPlugin < Plugin
           m.reply "Previous move cannot be challenged."
         end
       end
-    when :od # show playing order
+    when /^o(d|rder)?\b/ # show playing order
       return if m.params
       g.show_order
-    when :ti # show play time
+    when /^t(i|me)?\b/ # show play time
       return if m.params
       g.show_time
-    when :tu # show whose turn is it
+    when /^t(u|urn)?\b/ # show whose turn is it
       return if m.params
       if g.has_turn?(m.source)
         m.reply "It's your turn, nigga."
