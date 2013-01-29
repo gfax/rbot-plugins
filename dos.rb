@@ -1138,7 +1138,7 @@ class DosPlugin < Plugin
     when /^o(d|rder)?\b/ # show playing order
       return if m.params
       g.show_order
-    when /^t(i|me)?\b/ # show play time
+    when /^ti(me)?\b/ # show play time
       return if m.params
       g.show_time
     when /^t(u|urn)?\b/ # show whose turn is it
