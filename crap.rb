@@ -21,6 +21,7 @@ class CrapPlugin < Plugin
 
   def message(m)
     return unless chat(m) == "#gfax" or chat(m) == "#botfax"
+    b = @bot.nick.downcase
     case m.message.downcase
     ### BATMAN ###
     when /batman/
@@ -83,7 +84,7 @@ class CrapPlugin < Plugin
         m.reply batman_quote.sample
       end
     ### HIGGINS VON HIGGINS ###
-    when /higgins von higgins your incredible journey ends today/
+    when /your incredible journey ends today/
       m.reply "I don't think so, Corporal Tyranus."
     when /i don'?t think so,? corporal tyranus/
       m.reply "Let's finish this."
@@ -96,28 +97,36 @@ class CrapPlugin < Plugin
       m.reply "\;\["
     when /^anybody wan/i, /^anyone wan/
       m.reply "DON'T DO IT, IT'S A TRAP"
-    when /^fu dark/
+    when /^fu ?#{b}\b/
       m.reply "FU #{m.sourcenick.upcase}"
     when /fu man/
       m.reply "fu manchu"
-    when /^no dark/
+    when /hello,? #{b}/
+      m.reply "Wow... no homo, #{m.sourcenick}."
+    when /^hello there,? #{b}/
+      m.reply "Oh no, it's #{m.sourcenick}."
+    when /^no #{b}\b/
       if m.sourcenick.downcase == "oddbondboris"
         m.reply "no roach"
       else
         m.reply "NO OBB"
       end
     when /no u/
-      if rand(1000) == 1
+      if rand(500) == 0
         m.reply "OK FINE, ME"
       else
         m.reply "NO U"
       end
     when /^oh u/
       m.reply "oh YES"
+    when /^oh hai,? #{b}\b/
+      m.reply "oh hai #{m.sourcenick}"
     when /^pingas/
       m.reply "pongas"
     when /^um$/
       m.reply "UM U"
+    when "yo #{b}"
+      m.reply "yo #{m.sourcenick}"
     end
   end
 
