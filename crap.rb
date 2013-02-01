@@ -103,8 +103,10 @@ class CrapPlugin < Plugin
       m.reply "fu manchu"
     when /hello,? #{b}/
       m.reply "Wow... no homo, #{m.sourcenick}."
-    when /^hello there,? #{b}/
-      m.reply "Oh no, it's #{m.sourcenick}."
+    when /^hello (th|d)ere(.|!)?$/
+      m.reply "Oh no. It's you."
+    when /^hello (th|d)ere,? #{b}/
+      m.reply "Oh no. It's #{m.sourcenick}."
     when /^no #{b}\b/
       if m.sourcenick.downcase == "oddbondboris"
         m.reply "no roach"
@@ -119,7 +121,7 @@ class CrapPlugin < Plugin
       end
     when /^oh u/
       m.reply "oh YES"
-    when /^oh hai,? #{b}\b/
+    when /^oh hai,? #{b}/
       m.reply "oh hai #{m.sourcenick}"
     when /^pingas/
       m.reply "pongas"
