@@ -87,10 +87,12 @@ class CrapPlugin < Plugin
     when /your incredible journey ends today/
       m.reply "I don't think so, Corporal Tyranus."
     when /i don'?t think so,? corporal tyranus/
+      m.reply "THE MEDALLION!?!"
+    when /^the medallion/
       m.reply "Let's finish this."
-    when /let'?s finish this/
+    when /^let'?s finish this/
       m.reply "You're mine!"
-    when /you'?re mine!/
+    when /^you'?re mine!?/
       @bot.kick(m.replyto, m.sourcenick, "*EXPLODES YOU WITH A GUITAR SOLO*") if m.public?
     ### RETORTS ###
     when /^\[\;/
