@@ -36,16 +36,16 @@ class SexPlugin < Plugin
              "gorgeous", "sweet", "nymphomaniacal", "large-hipped", "freckled", "forty-five year old",
              "white-haired", "large-boned", "saintly", "blind", "bearded", "blue-eyed", "large tongued",
              "friendly", "piano playing", "ear licking", "doe eyed", "sock sniffing", "lesbian", "hairy" ]
-    female = [ "baggage", "hussy", "woman", "Duchess", "female impersonator", "nymphomaniac", "virgin", 
+    female = [ "baggage", "hussy", "woman", "Duchess", "female impersonator", "nymphomaniac", "virgin",
                "leather freak", "home-coming queen", "defrocked nun", "bisexual budgie", "cheerleader",
                "office secretary", "sexual deviate", "DARPA contract monitor", "little matchgirl",
                "ceremonial penguin", "femme fatale", "bosses' daughter", "construction worker",
                "sausage abuser", "secretary", "Congressman's page", "grandmother", "penguin",
                "German shepherd", "stewardess", "waitress", "prostitute", "computer science group",
                "housewife", "lady of the evening", "semen collector", "aviatrix", "burn victm" ]
-    as = "as" 
+    as = "as"
     madj = [ "thrashing", "slurping", "insatiable", "rabid", "satanic", "corpulent", "nose-grooming",
-               "tripe-fondling", "dribbling", "spread-eagled", "orally fixated", "vile", 
+               "tripe-fondling", "dribbling", "spread-eagled", "orally fixated", "vile",
                "awesomely endowed", "handsome", "mush-brained", "tremendously hung", "three-legged",
                "pile-driving", "cross-dressing", "gerbil buggering", "bung-hole stuffing",
                "sphincter licking", "hair-pie chewing", "muff-diving", "clam shucking", "egg-sucking",

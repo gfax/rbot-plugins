@@ -776,7 +776,7 @@ class DosGame
       @player_has_picked_once = true
     else
       announce "#{p} picks another card."
-      deal(p, 1) 
+      deal(p, 1)
       @player_has_picked_twice = true
     end
   end
@@ -843,7 +843,7 @@ class DosGame
   end
 
   def drop_player(nick)
-    # A nick is passed because the original 
+    # A nick is passed because the original
     # player might have left the channel.
     unless p = get_player(nick)
       announce "#{p} isn't playing #{DOS}"

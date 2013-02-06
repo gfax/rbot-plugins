@@ -16,8 +16,8 @@ class DatesPlugin < Plugin
   def comp(m, params)
     if params[:hour].nil? then hour = 0 else hour = params[:hour] end
     event = Time.new(params[:year],params[:month],params[:day],hour,0,0)
-    # returns an array with number of days, hours, minutes and seconds. 
-    days, remaining = (Time.now-event).to_i.abs.divmod(86400) 
+    # returns an array with number of days, hours, minutes and seconds.
+    days, remaining = (Time.now-event).to_i.abs.divmod(86400)
     hours, remaining = remaining.divmod(3600)
     minutes, seconds = remaining.divmod(60)
     [days, hours, minutes, seconds]

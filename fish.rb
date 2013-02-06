@@ -259,7 +259,7 @@ class GoFish
 
   def deal(player, n=1)
     cards = @deck.pop(n)
-    unless @turn.nil? 
+    unless @turn.nil?
       notify player, "#{Bold}You drew:#{Bold} #{cards.join(' ')}"
     end
     player.cards |= cards
@@ -352,7 +352,7 @@ class GoFish
       return
     end
     results = []
-    # This will take shorthand strings and 
+    # This will take shorthand strings and
     # produce real card objects from them.
     cards.each do |c|
       # has_card returns arrays, so pipe the results into the
@@ -428,7 +428,7 @@ class GoFish
 
   def update_chan_stats(score)
     if @registry.has_key? channel.name
-      @registry[channel.name] = [ @registry[channel.name][0] + 1, 
+      @registry[channel.name] = [ @registry[channel.name][0] + 1,
                                   @registry[channel.name][1] + score,
                                   @registry[channel.name][2]
                                 ]
@@ -547,7 +547,7 @@ class GoFishPlugin < Plugin
       end
     when /^ca?\b/
       if p.nil?
-        retort = 
+        retort =
           [ "Stop trying to confuse me, #{m.source.nick}!",
             "Sorry, #{m.source.nick}, this is between me and the guys."
           ].sample
@@ -612,7 +612,7 @@ class GoFishPlugin < Plugin
     if params[:y].nil?
       if x =~ /^#/
         m.reply "#{Bold}#{x}#{Bold} -- " +
-                "(games: #{@registry[xd][0]}, " + 
+                "(games: #{@registry[xd][0]}, " +
                 "total score: #{@registry[xd][1]})"
         # Make an array of the channel's top players.
         a = @registry[xd][2].dup

@@ -73,7 +73,7 @@ class DicePlugin < Plugin
   end
 
   def privmsg(m)
-    # Extract the actual dice request from the message 
+    # Extract the actual dice request from the message
     # parameters, splitting it into dice and modifiers
     a = m.params.gsub(/\s+/,'').scan(/^\d*d\d+|[+-]\d*d\d+|[+-]\d+/)
     # Check number of total dice and sides per dice

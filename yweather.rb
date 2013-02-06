@@ -33,7 +33,7 @@ class YWeatherPlugin < Plugin
         m.reply "Invalid zip/id."
         return
       end
-    end 
+    end
     feed = if location.length == 5
              @bot.httputil.get URL + "?p=#{location}"
            else

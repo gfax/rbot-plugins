@@ -68,7 +68,7 @@ class TicTacToePlugin < Plugin
               [(/......XXX/),:X], [(/X..X..X../),:X],
               [(/.X..X..X./),:X], [(/..X..X..X/),:X],
               [(/X...X...X/),:X], [(/..X.X.X../),:X]]
-    
+
   def display(m, chan)
     n = 0
     if @bot.config['tictactoe.unicode'] == false
@@ -192,9 +192,9 @@ class TicTacToePlugin < Plugin
       else
         display(m, chan)
       end
-    end				
+    end
   end
-  
+
   def message(m)
     return if @ttter1.nil? or @turn.nil?
     chan = get_chan(m)
@@ -227,7 +227,7 @@ class TicTacToePlugin < Plugin
     end
     move(m, chan, move_pos, mark)
   end
-  
+
   def move(m, chan, space, mark)
     if valid_move?(space)
       @board[chan].delete_at(space)
@@ -269,7 +269,7 @@ class TicTacToePlugin < Plugin
       end
       if move_pos.nil?
         # Then just get the first available move
-        unless occupied?(chan, 4) 
+        unless occupied?(chan, 4)
           move_pos = 4
         else
           move_pos = @board[chan].index(' ')

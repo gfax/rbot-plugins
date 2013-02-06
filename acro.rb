@@ -5,14 +5,14 @@
 # License:: BSD
 # Version:: 2013-01-19
 #
-# Acrophobia - Submit backronyms and vote on the best! 
+# Acrophobia - Submit backronyms and vote on the best!
 # http://en.wikipedia.org/wiki/Acrophobia_%28game%29
 #
 # TODO: Wow this plugin is very hackish. Definitely need to redo some things.
 # FIXME: Fix stats and hall of fame.
 # FIXME: Currently only works in one channel at a time since people /msg the
 # bot with suggestions and votes. Any possible work-arounds?
-# 
+#
 
 Hi = "\002\00312"
 Clear = "\017"
@@ -102,7 +102,7 @@ class AcroPlugin < Plugin
     @playing = true
     @channel = m.channel
     @rounds_left = if params[:roundCount].to_i > 0
-                    params[:roundCount].to_i 
+                    params[:roundCount].to_i
                   else
                     @bot.config['acro.rounds']
                   end
@@ -120,7 +120,7 @@ class AcroPlugin < Plugin
       nextLetter = sprintf("%c", 65+rand(26))
       # 90% chance of picking a new letter if a bad letter was chosen
       if BAD_LETTERS.include?(nextLetter) and rand(101) > 10
-        nextLetter = sprintf("%c", 65+rand(26)) 
+        nextLetter = sprintf("%c", 65+rand(26))
       end
       @acro += nextLetter
     end
@@ -144,7 +144,7 @@ class AcroPlugin < Plugin
     }
   end
 
-  # Stop accepting submissions, tell people what 
+  # Stop accepting submissions, tell people what
   # they can vote on, and start accepting votes.
   def do_voting()
     @submitting = false
@@ -156,7 +156,7 @@ class AcroPlugin < Plugin
     end
     say "Vote for one of the following and send it to " +
         "me via #{Hi}/msg #{@bot.nick} vote <Number>"
-    @answers.each do |k,v| 
+    @answers.each do |k,v|
       @ballot.push({:candidate=>k, :votes=>0, :submitter=>v})
     end
     1.upto(@ballot.length) do |n|
@@ -173,7 +173,7 @@ class AcroPlugin < Plugin
     say "Thanks for voting, let's look at the results!"
 
     # Score =
-    # Number of votes + 
+    # Number of votes +
     # (First answer + less than 25 points = + 2 speed points)
     # (Most votes = + <Acronym length> bonus points)
     winner = ""
@@ -184,7 +184,7 @@ class AcroPlugin < Plugin
       user[:submissions] = user.fetch(:submissions, 0) + 1
       user[:totalPoints] = user.fetch(:totalPoints, 0) + n[:votes]
       say "#{Hi}#{n[:submitter]}#{Clear}'s answer of " +
-          "#{Hi}#{n[:candidate]}#{Clear} received " + 
+          "#{Hi}#{n[:candidate]}#{Clear} received " +
           "#{Hi}#{n[:votes]}#{Clear} votes"
       if n[:votes] > winning_votes
         winner = n[:submitter]
@@ -428,5 +428,5 @@ plugin.map 'vote *input',
   :action => 'handle_vote', :public => false
 plugin.map 'acro *input',
   :action => 'process_private', :public => false
-plugin.map 'acro *input',  
+plugin.map 'acro *input',
   :action => 'process_public', :private => false

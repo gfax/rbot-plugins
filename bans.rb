@@ -207,7 +207,7 @@ class BansPlugin < Plugin
     unless m.source.is_op?(channel) or m.source.is_voice?(channel)
       m.reply "You can't kick without being voiced."
       return
-      end 
+      end
     if m.server.get_user(nick).is_op?(channel) && nick.downcase != @bot.nick.downcase
       nick = m.sourcenick
       end

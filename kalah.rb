@@ -12,7 +12,7 @@
 class KalahPlugin < Plugin
 
   KHash = Struct.new(:c0, :c1, :c2, :c3, :c4, :c5, :c6, :c7, :c8, :c9, :c10, :c11, :c12, :c13)
-    
+
   Config.register Config::BooleanValue.new('kalah.capture_leftovers',
     :default => true,
     :desc => "If a player has no more moves, the other player gets to keep " +
@@ -21,7 +21,7 @@ class KalahPlugin < Plugin
   Config.register Config::BooleanValue.new('kalah.clockwise',
     :default => true,
     :desc => "Seeds move clockwise when set to true, and counter-clockwise " +
-             "when false. Counter-clockwise movement allows more seeds to " + 
+             "when false. Counter-clockwise movement allows more seeds to " +
              "land in your mancala, but clockwise focuses on capturing." )
 
   Config.register Config::BooleanValue.new('kalah.go_again',
@@ -179,7 +179,7 @@ class KalahPlugin < Plugin
    # so let's just make a big mess.
    m.reply "#{@cl1}#{b.c0}\003 #{b.c0 > 9 ? '' : ' '}" +
            "#{b.c1 > 9 ? '' : ' '}#{b.c1}#{s}" +
-           "#{b.c2 > 9 ? '' : ' '}#{b.c2}#{s}" + 
+           "#{b.c2 > 9 ? '' : ' '}#{b.c2}#{s}" +
            "#{b.c3 > 9 ? '' : ' '}#{b.c3}#{s}" +
            "#{b.c4 > 9 ? '' : ' '}#{b.c4}#{s}" +
            "#{b.c5 > 9 ? '' : ' '}#{b.c5}#{s}" +
@@ -242,7 +242,7 @@ class KalahPlugin < Plugin
     end
     move(m, chan, player, cup)
   end
-  
+
   def move(m, chan, player, cup)
     if player == 2
       pos = opposite(cup)
@@ -300,7 +300,7 @@ class KalahPlugin < Plugin
     @board = Hash.new if @board.nil?
     s = if params[:seeds].to_i.between?(3,12)
           params[:seeds].to_i
-        else 
+        else
           @bot.config['kalah.seeds'].to_i
         end
     @board[chan] = [ 0, s, s, s, s, s, s, 0, s, s, s, s, s, s ]
@@ -374,7 +374,7 @@ class KalahPlugin < Plugin
       @bot.timer.add_once(2) { bot_move(m, chan) }
     end
   end
-  
+
   def reset_everything(m, params)
     @registry.clear
     m.reply "You ruined EVERYTHING."
@@ -473,41 +473,27 @@ class KalahPlugin < Plugin
 end
 
 p = KalahPlugin.new
-p.map 'kalah bot [:seeds]', :action => "new_game",
-  :defaults => { :bot_player => true, :seeds => 0 },
-  :requirements => { :seeds => /^\d+$/ }
-p.map 'mancala bot [:seeds]', :action => "new_game", 
-  :defaults => { :bot_player => true, :seeds => 0 },
-  :requirements => { :seeds => /^\d+$/ }
-p.map 'kalah reset', :action => "reset_everything",
-  :auth_path => 'reset'
-p.map 'mancala reset', :action => "reset_everything",
-  :auth_path => 'reset'
-p.map 'kalah end', :action => "stop",
-  :auth_path => 'stop'
-p.map 'mancala end', :action => "stop",
-  :auth_path => 'stop'
-p.map 'kalah cancel', :action => "stop",
-  :auth_path => 'stop'
-p.map 'mancala cancel', :action => "stop",
-  :auth_path => 'stop'
-p.map 'kalah stop', :action => "stop",
-  :auth_path => 'stop'
-p.map 'mancala stop', :action => "stop",
-  :auth_path => 'stop'
-p.map 'kalah stat[s] [:x]', :action => "show_stats",
-  :defaults => { :x => "x" }
-p.map 'mancala stat[s] [:x]', :action => "show_stats",
-  :defaults => { :x => "x" }
-p.map 'kalah score[s] [:x]', :action => "show_stats",
-  :defaults => { :x => "x" }
-p.map 'mancala score[s] [:x]', :action => "show_stats",
-  :defaults => { :x => "x" }
-p.map 'kalah [:seeds]', :action => "new_game",
-  :defaults => { :bot_player => false, :seeds => 0 },
-  :requirements => { :seeds => /^\d+$/ }
-p.map 'mancala [:seeds]', :action => "new_game",
-  :defaults => { :bot_player => false, :seeds => 0 },
-  :requirements => { :seeds => /^\d+$/ }
+
+['kalah', 'mancala'].each do |scope|
+  p.map "#{scope} bot [:seeds]", :action => 'new_game',
+    :defaults => { :bot_player => true, :seeds => 0 },
+    :requirements => { :seeds => /^\d+$/ }
+  p.map "#{scope} reset", :action => 'reset_everything',
+    :auth_path => 'reset'
+  p.map "#{scope} end", :action => 'stop',
+    :auth_path => 'stop'
+  p.map "#{scope} cancel", :action => 'stop',
+    :auth_path => 'stop'
+  p.map "#{scope} stop", :action => 'stop',
+    :auth_path => 'stop'
+  p.map "#{scope} stat[s] [:x]", :action => 'show_stats',
+    :defaults => { :x => "x" }
+  p.map "#{scope} score[s] [:x]", :action => 'show_stats',
+    :defaults => { :x => "x" }
+  p.map "#{scope} [:seeds]", :action => "new_game",
+    :defaults => { :bot_player => false, :seeds => 0 },
+    :requirements => { :seeds => /^\d+$/ }
+end
+
 p.default_auth('reset', false)
 p.default_auth('stop', true)
