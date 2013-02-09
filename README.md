@@ -5,6 +5,7 @@ Miscellaneous plugins used by Dark.
 + __acro.rb__ - Acrophobia-style game for IRC
 + __autovoice.rb__ - Autovoicing script, similar to auto-op.
 + __bans.rb__ - Only Ops can kick.
++ __coin.rb__ - Improved version of jazzyfox's coin plugin.
 + __crap.rb__ - Don't bother with this one.
 + __dates.rb__ - Date calculator.
 + __dice.rb__ - Cleaned up version of rbot's dice script. Doesn't break when adding text after dice roll.
