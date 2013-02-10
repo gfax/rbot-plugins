@@ -10,7 +10,9 @@
 class CoinPlugin < Plugin
 
   def help(plugin, topic='')
-    return 'coin => flip a coin, coin stats => show your coin flipping stats'
+    p = @bot.config['core.address_prefix'].first
+    return "#{p}#{plugin} => flip a coin, " +
+           "#{p}#{plugin} stats => show your coin flipping stats"
   end
 
   def initialize
@@ -44,7 +46,7 @@ class CoinPlugin < Plugin
     elsif params[:nick]
       m.reply "Sorry, #{params[:nick]} hasn't flipped any coins."
     else
-      n.reply "Sorry, you haven't flipped any coins."
+      m.reply "Sorry, you haven't flipped any coins."
     end
   end
 
@@ -57,5 +59,10 @@ class CoinPlugin < Plugin
 end
 
 plugin = CoinPlugin.new
-plugin.map 'coin stats [:nick]', :action => 'coin_stats'
-plugin.map 'coin :number', {:action => 'flip_coin', :defaults => {:number => 1}}
+
+[ 'coin', 'cointoss' ].each do |scope|
+  plugin.map "#{scope} stats [:nick]",
+    :action => 'coin_stats'
+  plugin.map "#{scope} :number", 
+    :action => 'flip_coin', :defaults => { :number => 1 }
+end
