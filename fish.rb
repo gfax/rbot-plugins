@@ -5,7 +5,7 @@
 # Author:: Lite <degradinglight@gmail.com>
 # Copyright:: (C) 2012 gfax.ch
 # License:: GPL
-# Version:: 2012-12-13
+# Version:: 2013-02-09
 #
 
 class GoFish
@@ -493,6 +493,7 @@ class GoFishPlugin < Plugin
   end
 
   def help(plugin, topic='')
+    p = @bot.config['core.address_prefix'].first
     case topic
     when /commands?/
       "#{Bold}jo#{Bold} to join in. #{Bold}drop#{Bold} to drop from " +
@@ -509,11 +510,11 @@ class GoFishPlugin < Plugin
       "set of cards with the same rank, (ie. 4 Aces). Pairs are " +
       "worth 2 points and full sets are worth 6 points."
     when /stat(s?|istics?)/
-      "!gofish stats [user|chan] to see player or channel stats. " +
-      "!gofish stats <chan> <user> a player's stats on that channel. " +
-      "!gofish top also shows the current channel's stats."
+      "#{p}#{plugin} stats [user|chan] to see player or channel stats. " +
+      "#{p}#{plugin} stats <chan> <user> a player's stats on that channel. " +
+      "#{p}#{plugin} top also shows the current channel's stats."
     else
-      "Go Fish help topics: commands, objective, rules, stats"
+      "#{Bold}Go Fish#{Bold} help topics: commands, objective, rules, stats"
     end
   end
 
@@ -651,15 +652,17 @@ end
 
 plugin = GoFishPlugin.new
 
-plugin.map 'fish cancel', :private => false, :action => :stop_game
-plugin.map 'gofish cancel', :private => false, :action => :stop_game
-plugin.map 'fish end', :private => false, :action => :stop_game
-plugin.map 'gofish end', :private => false, :action => :stop_game
-plugin.map 'fish stat[s] [:x [:y]]', :action => :show_stats
-plugin.map 'gofish stat[s] [:x [:y]]', :action => :show_stats
-plugin.map 'fish stop', :private => false, :action => :stop_game
-plugin.map 'gofish stop', :private => false, :action => :stop_game
-plugin.map 'fish top', :action => :show_stats, :defaults => { :x => false }
-plugin.map 'gofish top', :action => :show_stats, :defaults => { :x => false }
-plugin.map 'fish', :private => false, :action => :create_game
-plugin.map 'gofish', :private => false, :action => :create_game
+[ 'fish', 'gofish' ].each do |scope|
+  plugin.map "#{scope} cancel",
+    :private => false, :action => :stop_game
+  plugin.map "#{scope} end",
+    :private => false, :action => :stop_game
+  plugin.map "#{scope} stat[s] [:x [:y]]",
+    :action => :show_stats
+  plugin.map "#{scope} stop",
+    :private => false, :action => :stop_game
+  plugin.map "#{scope} top",
+    :action => :show_stats, :defaults => { :x => false }
+  plugin.map "#{scope}",
+    :private => false, :action => :create_game
+end
