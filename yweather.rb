@@ -70,10 +70,12 @@ class YWeatherPlugin < Plugin
 end
 
 p = YWeatherPlugin.new
-p.map "w [:id]", :action => "weather", :defaults => { :forecast => false }
-p.map "weather [:id]", :action => "weather", :defaults => { :forecast => false }
-p.map "wz [:id]", :action => "weather", :defaults => { :forecast => false }
-p.map "fc [:id]", :action => "weather", :defaults => { :forecast => true }
-p.map "forecast [:id]", :action => "weather", :defaults => { :forecast => true }
-p.map "w set [zip[code]] [:id]", :action => "set_user"
-p.map "wz set [zip[code]] [:id]", :action => "set_user"
+
+[ 'w', 'weather', 'wz' ].each do |w|
+  p.map "#{w} [:id]", :action => "weather", :defaults => { :forecast => false }
+  p.map "#{w} set [zip[code]] [:id]", :action => "set_user"
+end
+
+[ 'fc', 'forecast'].each do |fc|
+  p.map "#{fc} [:id]", :action => "weather", :defaults => { :forecast => true }
+end
