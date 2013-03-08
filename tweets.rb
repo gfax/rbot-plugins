@@ -23,7 +23,7 @@ class TweetsPlugin < Plugin
   )
 
   Config.register Config::BooleanValue.new('tweets.all_channels',
-    :default => false,
+    :default => true,
     :desc => "Retrieve tweets from urls on all " +
              "channels instead of certain channels."
   )
