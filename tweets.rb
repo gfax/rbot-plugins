@@ -1,13 +1,15 @@
 #-- vim:sw=2:et
 #++
 #
-# :title: TwitterVorleser Plugin
+# :title: Tweets
 #
-# Listens for twitter url and fetches content of tweets
+# Listens for twitter urls and fetches content of tweets
 #
 # Author:: Patric Mueller <bhaak@gmx.net>
+# Author:: Jay Thomas <degradinglight@gmail.com>
 #
 # Copyright:: (C) 2010 Patric Mueller
+# Copyright:: (C) 2013 Jay Thomas
 #
 # License:: MIT license
 
