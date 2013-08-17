@@ -13,19 +13,21 @@ class Yaniv
 
   class Card
 
-    Ranks = %W(2 3 4 5 6 7 8 9 10 J Q K A)
+    Ranks = %W(A 2 3 4 5 6 7 8 9 10 J Q K)
     Suits = [ :clubs, :diamonds, :hearts, :spades ]
 
     attr_accessor :color, :rank, :suit, :shand
     attr_reader :name, :rank, :suit
 
     def initialize(id)
-      if id.between?(1,52)
-        @rank = Ranks[id % Ranks.length]
-        @suit = Suits[id % Suits.length]
-      else
+      if id < 0
+        @value = 0
         @rank = 'J'
         @suit = :joker
+      else
+        @value = (id % Ranks.length) + 1
+        @rank = Ranks[id % Ranks.length]
+        @suit = Suits[id % Suits.length]
       end
     end
 
@@ -45,7 +47,7 @@ class Yaniv
         when :clubs, :spades
           Irc.color(:black,:white)
         when :joker
-          Irc.color(:limegreen, :white)
+          Irc.color(:green, :white)
         end
       symbol = case suit
         when :clubs then ' ♣'
@@ -85,6 +87,10 @@ class Yaniv
       @cards = cards.sort {|x,y| x.suit <=> y.suit }
     end
 
+    def total
+      hand.inject { |sum, x| sum + x.value }
+    end
+
     def to_s
       Bold + user.to_s + Bold
     end
@@ -92,7 +98,7 @@ class Yaniv
   end
 
 
-  attr_reader :channel, :deck, :dropped, :join_timer, :last_discard, 
+  attr_reader :channel, :deck, :dropouts, :join_timer, :last_discard,
               :manager, :players, :started, :temp_discard
 
   def initialize(plugin, channel, user, rounds)
@@ -101,20 +107,34 @@ class Yaniv
     @plugin = plugin
     @registry = plugin.registry
     @deck = []         # card stock
-    @dropped = []      # players booted from game
+    @dropouts = []     # players booted from game
     @join_timer = nil  # timer for countdown
     @last_discard = [] # cards last player discarded
     @manager = nil     # player in control of game
     @players = []      # players currently in game
     @started = nil     # time the game started
     @temp_discard = [] # cards to be discarded after draw
+    add_deck(2)
     add_player(user)
+  end
+
+  def add_deck(n=1)
+    deck_size = Card::Ranks.length * Card::Suits.length * n - 1
+    cards = (0..deck_size).to_a.collect { |id| Card.new(id) }
+    (n*2).times { cards << Card.new(-1) } if @bot.config['yaniv.jokers']
+    @deck |= cards.shuffle
   end
 
   def add_player(user)
     if player = get_player(user)
       say "You're already in the game #{player}."
       return
+    end
+    @dropouts.each do |dp|
+      if dp.user == user
+        say "You were dropped from the game, #{dp}. You can't get back in."
+        return
+      end
     end
     player = Player.new(user)
     @players << player
@@ -124,15 +144,19 @@ class Yaniv
     else
       say "#{player} joins #{Title}."
     end
-    player.hand << @deck.pop if started
-    if @join_timer
-      if players.size == 4
-        @bot.timer.remove(@join_timer)
-        do_round
-      else
-        @bot.timer.reschedule(@join_timer, 10)
-      end
-    elsif players.size > 1
+    if players.size == 1
+      player.hand |= @deck.shift(5)
+    else
+      n = 0
+      players.each { |e| n += e.hand.size }
+      player.hand |= @deck.shift((n / players.length + 0.5).to_i)
+    end
+    if (players.size + dropouts.size) % 4 == 0
+      add_deck # Thicken up the deck.
+    end
+    if @join_timer and players.size > 4
+      @bot.timer.reschedule(@join_timer, 10)
+    elsif players.size == 2
       countdown = @bot.config['yaniv.countdown']
       @join_timer = @bot.timer.add_once(countdown) { start_game }
       say "Game will start in #{countdown} seconds."
@@ -142,7 +166,38 @@ class Yaniv
   def do_discard(player, cards)
     a.map! { |e| player.get_card(e) }
     a.reject! { |e| e.nil? }
-    
+    if a.empty?
+      say "Specify some cards."
+      return false
+    elsif a.length == 1
+      @temp_discard = a
+      say "#{player} discards #{a.first}"
+      player.hand.delete(a.first)
+      return true
+    elsif is_ranked?(a)
+      if a.size == 2
+        @temp_discard = a
+      else
+        @temp_discard = [ a.first, a.last ]
+        @discard |= a[1..-2]
+      end
+      player.hand -= a
+      say "#{player} discards #{a.size} cards."
+      return true
+    elsif is_straight?(a)
+      a.sort_by! { |x| x.value }
+      if a.size == 2
+        @temp_discard = a
+      else
+        @temp_discard = [ a.first, a.last ]
+        @discard |= a[1..-2]
+      end
+      player.hand -= a
+      say "#{player} discards #{a.size} cards."
+      return true
+    end
+    notify player, Utils.comma_list(a) + " do not match."
+    return false
   end
 
   def do_draw(player, card)
@@ -169,9 +224,19 @@ class Yaniv
       player.sort_cards
       return true
     end
-    a.each do |e| 
-      card = get_card(e) if card.zero?
+    a.each do |e|
+      last_discard.dup.each do |d| 
+        if e == d.shorthand or e == d.shorthand.reverse
+          player.hand << d
+          say "#{player} draws from the discard."
+          notify player, "#{Bold}You drew:#{Bold} #{d}"
+          @last_discard.delete(d)
+          player.sort_cards
+        end
+      end
     end
+    say "Pick a card from the deck or discard pile."
+    return false
   end
 
   def do_turn(hold_place=false)
@@ -266,6 +331,38 @@ class Yaniv
       get_player(user.to_s)
     end
     return nil
+  end
+
+  def is_ranked?(a)
+    a.each do |e|
+      match = (e.rank == a.first.rank or e.suit == :joker)
+      break unless match
+    end
+    return match
+  end
+
+  def is_straight?(a)
+    return false unless a.size > 2
+    a.each do |e|
+      match = (e.suit == a.first.suit or e.suit == :joker)
+      break unless match
+    end
+    return false unless match
+    ranks = a.collect { |e| e.value }
+    ranks = ranks.reject { |e| e.zero? }.sort
+    jokers = a.size - ranks.size
+    # Take one joker for every step in rank missing.
+    n = ranks.first
+    ranks.each do |e|
+      if n == e
+        n += 1
+      else
+        jokers -= 1
+        n += 2
+      end
+      return false if jokers < 0
+    end
+    return true
   end
 
   def notify(player, msg, opts={})
@@ -398,6 +495,12 @@ class Yaniv
     @registry[:chan], @registry[:user] = r1, r2
   end
 
+  def yaniv(player)
+    return if player != players.first or player.discarded
+    return unless player.total <= 5
+    end_game
+  end
+
 end
 
 
@@ -506,6 +609,8 @@ class YanivPlugin < Plugin
       g.replace_player(player, a)
     when /^transfer( |\z)/
       g.transfer_management(player, a)
+    when /^yaniv( |\z)/
+      g.yaniv(player)
     end
   end
 
