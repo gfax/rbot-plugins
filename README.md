@@ -19,3 +19,8 @@ Miscellaneous plugins used by Dark.
 + __url.rb__ - This is a stripped down version of rbot's URL plugin with no registry or url squishing. This eliminates the problem with the ever-growing registry. You must whitelist the sites you wish to display info for. This is useful for people who only want to display url info for specific sites, IE YouTube. Disable or overwrite the default url plugin when using this one.
 + __yaniv.rb__ - Israeli card game played with standard cards.
 + __yweather.rb__ - A minimalistic weather and forecast plugin.
+
+###Other rbot plugins:
++ _[Junkyard](https://github.com/gfax/rbot-junkyard)_ - The (unofficial) official card fighting game of rbot.
++ _[LoveLetter](https://github.com/gfax/rbot-loveletter)_ - Tempest card game of clues and guessing.
++ _[SanJuan](https://github.com/gfax/rbot-sanjuan)_ - IRC version of the card game version of Puerto Rico...
