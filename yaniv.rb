@@ -4,7 +4,7 @@
 # Author:: Jay Thomas <degradinglight@gmail.com>
 # Copyright:: (C) 2013 gfax
 # License:: GPL
-# Version:: 2013-08-08
+# Version:: 2013-08-19
 #
 
 class Yaniv
@@ -16,8 +16,7 @@ class Yaniv
     Ranks = %W(A 2 3 4 5 6 7 8 9 10 J Q K)
     Suits = [ :clubs, :diamonds, :hearts, :spades ]
 
-    attr_accessor :color, :rank, :suit, :shand
-    attr_reader :name, :rank, :suit
+    attr_reader :rank, :suit, :value
 
     def initialize(id)
       if id < 0
@@ -47,7 +46,7 @@ class Yaniv
         when :clubs, :spades
           Irc.color(:black,:white)
         when :joker
-          Irc.color(:green, :white)
+          Irc.color(:purple, :white)
         end
       symbol = case suit
         when :clubs then ' ♣'
@@ -77,7 +76,7 @@ class Yaniv
       return false if card.nil?
       if card.is_a? String
         hand.each do |e|
-          return e if card == e.shorthand or card.reverse == e.shorthand
+          return e if card == e.name or card.reverse == e.name
         end
       end
       return nil
@@ -88,7 +87,9 @@ class Yaniv
     end
 
     def total
-      hand.inject { |sum, x| sum + x.value }
+      n = 0
+      hand.each { |e| n += e.value }
+      return n
     end
 
     def to_s
@@ -149,11 +150,10 @@ class Yaniv
     else
       n = 0
       players.each { |e| n += e.hand.size }
-      player.hand |= @deck.shift((n / players.length + 0.5).to_i)
+      player.hand |= @deck.shift(((n/(players.size-1))+0.5).to_i)
     end
-    if (players.size + dropouts.size) % 4 == 0
-      add_deck # Thicken up the deck.
-    end
+    # Thicken up the deck.
+    add_deck if (players.size + dropouts.size) % 4 == 0
     if @join_timer and players.size > 4
       @bot.timer.reschedule(@join_timer, 10)
     elsif players.size == 2
@@ -163,44 +163,39 @@ class Yaniv
     end
   end
 
-  def do_discard(player, cards)
-    a.map! { |e| player.get_card(e) }
-    a.reject! { |e| e.nil? }
-    if a.empty?
+  def do_discard(player, a)
+    cards = a.map { |e| player.get_card(e) }.reject { |e| e.nil? }
+    if cards.empty?
       say "Specify some cards."
       return false
-    elsif a.length == 1
-      @temp_discard = a
-      say "#{player} discards #{a.first}"
-      player.hand.delete(a.first)
+    elsif cards.length == 1
+      @temp_discard = cards
+      say "#{player} discards #{cards.first}"
+      player.hand.delete(cards.first)
       return true
-    elsif is_ranked?(a)
-      if a.size == 2
-        @temp_discard = a
+    elsif is_ranked?(cards)
+      if cards.size == 2
+        @temp_discard = cards
       else
-        @temp_discard = [ a.first, a.last ]
-        @discard |= a[1..-2]
+        @temp_discard = [ cards.first, cards.last ]
+        @discard |= cards[1..-2]
       end
-      player.hand -= a
-      say "#{player} discards #{a.size} cards."
+      cards.each { |e| player.hand -= e }
+      say "#{player} discards #{Utils.comma_list(cards)}."
       return true
-    elsif is_straight?(a)
-      a.sort_by! { |x| x.value }
-      if a.size == 2
-        @temp_discard = a
-      else
-        @temp_discard = [ a.first, a.last ]
-        @discard |= a[1..-2]
-      end
-      player.hand -= a
-      say "#{player} discards #{a.size} cards."
+    elsif is_straight?(cards)
+      cards.sort_by! { |x| x.value }
+      @temp_discard = [ cards.first, cards.last ]
+      @discard |= cards[1..-2]
+      cards.each { |e| player.hand -= e }
+      say "#{player} discards #{Utils.comma_list(cards)}."
       return true
     end
-    notify player, Utils.comma_list(a) + " do not match."
+    notify player, Utils.comma_list(cards) + " do not match."
     return false
   end
 
-  def do_draw(player, card)
+  def do_draw(player, a)
     a.each do |e|
       e = e.to_i
       next unless e.between?(1,last_discard.size + 1)
@@ -226,7 +221,7 @@ class Yaniv
     end
     a.each do |e|
       last_discard.dup.each do |d| 
-        if e == d.shorthand or e == d.shorthand.reverse
+        if e == d.name or e == d.name.reverse
           player.hand << d
           say "#{player} draws from the discard."
           notify player, "#{Bold}You drew:#{Bold} #{d}"
@@ -235,18 +230,22 @@ class Yaniv
         end
       end
     end
-    say "Pick a card from the deck or discard pile."
+    say "Pick up a card from the deck or discard pile."
+    show_discard
     return false
   end
 
   def do_turn(hold_place=false)
-    if hold_place
-    else
-      @players << @players.shift
+    @players << @players.shift unless hold_place
+    if last_discard.size > 0
+      @discard |= last_discard
+      @last_discard = temp_discard
+      @temp_discard.clear
     end
     player = players.first
     player.discarded = player.drew = false
-    say "It's player's turn."
+    say "It's #{player}'s turn."
+    show_hand(player)
   end
 
   def drop_player(dropper, a)
@@ -288,13 +287,15 @@ class Yaniv
     return Utils.secs_to_string(Time.now-started)
   end
 
-  def end_game
+  def end_game(player)
+    return if player != players.first or player.discarded
+    return unless player.total <= 5
     players.first.discarded = true
     players.first.drew = true
     # Time spent playing the game.
     @started = Time.now.to_i - started.to_i
     a = []
-    winners = players.sort { |x, y| x.score <=> y.score }
+    winners = players.sort { |x, y| x.total <=> y.total }
     winners.each { |p| a << "#{p} - #{p.score}"  }
     say 'The end. ' + a.join(', ')
     winners.reject! { |p| p.score < winners.first.score }
@@ -334,6 +335,7 @@ class Yaniv
   end
 
   def is_ranked?(a)
+    match = false
     a.each do |e|
       match = (e.rank == a.first.rank or e.suit == :joker)
       break unless match
@@ -343,6 +345,7 @@ class Yaniv
 
   def is_straight?(a)
     return false unless a.size > 2
+    match = false
     a.each do |e|
       match = (e.suit == a.first.suit or e.suit == :joker)
       break unless match
@@ -353,16 +356,17 @@ class Yaniv
     jokers = a.size - ranks.size
     # Take one joker for every step in rank missing.
     n = ranks.first
-    ranks.each do |e|
-      if n == e
-        n += 1
-      else
-        jokers -= 1
-        n += 2
-      end
-      return false if jokers < 0
+    ranks[1..-1].each do |e|
+      jokers -= 1 unless n == e + 1
+      n += 1
     end
+    return false if jokers < 0
     return true
+  end
+
+  def next_turn(num=0)
+    return 0 if num >= players.length - 1
+    return num + 1
   end
 
   def notify(player, msg, opts={})
@@ -373,12 +377,28 @@ class Yaniv
     return unless player == players.first
     return if a.empty?
     return if player.discarded and player.drew
-    unless player.discarded
-      player.discarded = do_discard(player, a)
-    else
+    # Temporarily set players' actions to true to
+    # prevent further moving while action commands
+    # are still being processed (issue from Uno.)
+    if player.discarded
+      player.drew = true
       player.drew = do_draw(player, a)
+    else
+      player.discarded = player.drew = true
+      player.discarded = do_discard(player, a)
+      player.drew = false
     end
-    do_turn if player.discarded and player.drew
+    if player.discarded and player.drew
+      do_turn
+    elsif player.discarded
+      if last_discard.empty?
+        player.hand << @deck.shift
+        say "#{player} drew from the deck."
+        do_turn
+      else
+        show_discard
+      end
+    end
   end
 
   def replace_player(replacer, a)
@@ -424,12 +444,24 @@ class Yaniv
     @bot.say who, msg, opts
   end
 
+  def show_discard
+    return if last_discard.empty?
+    a = [ "#{Bold}1.)#{Bold} (Deck)" ]
+    n = 1
+    last_discard.each do |e|
+      n += 1
+      a << "#{Bold}#{n}#{Bold} #{e}"
+    end
+    say "Pick a card: " + a.join(', ')
+  end
+
   def show_hand(p_array=players)
     [*p_array].each do |p|
       next if p.hand.empty?
-      string = 'Cards: ' + p.hand.join(' , ')
+      string = 'Cards: ' + p.hand.join(', ')
       notify p, string
     end
+    show_discard if players[0].discarded and not players[0].drew
   end
 
   def show_turn
@@ -443,6 +475,7 @@ class Yaniv
   end
 
   def start_game
+    @started = Time.now
     do_turn
   end
 
@@ -493,12 +526,6 @@ class Yaniv
     r2 = @registry[:user]
     r1[c][n], r2[n] = h1, h2
     @registry[:chan], @registry[:user] = r1, r2
-  end
-
-  def yaniv(player)
-    return if player != players.first or player.discarded
-    return unless player.total <= 5
-    end_game
   end
 
 end
@@ -610,7 +637,7 @@ class YanivPlugin < Plugin
     when /^transfer( |\z)/
       g.transfer_management(player, a)
     when /^yaniv( |\z)/
-      g.yaniv(player)
+      g.end_game(player)
     end
   end
 
