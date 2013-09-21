@@ -13,6 +13,7 @@ Miscellaneous plugins used by Dark.
 + __fish.rb__ - Go Fish!
 + __kalah.rb__ - American variant of Mancala with adjustable house rules.
 + __modes.rb__ - Allow voices to voice.
++ __pandorabot.rb__ - Custom pandorabot plugin. Change the plugin.map to your bot's nick or whatever.
 + __roulette.rb__ - User is banned 1 minute for every used chamber when shot.
 + __sex.rb__ - rbot variation of bsd-games' sex
 + __tictactoe.rb__ - aka noughts and crosses
